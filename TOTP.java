@@ -30,12 +30,14 @@ public class TOTP {
 		}
 	}
 	
-	public static int generateTOTP() {
+	public static int generateTOTP(Long tm) {
 		byte[] data = new byte[8];
-        long value = getCurrentInterval();
-        for (int i = 8; i-- > 0; value >>>= 8) {
-            data[i] = (byte) value;
-        }
+		long value = tm;
+		if (tm == null) value = getCurrentInterval();
+		
+		for (int i = 8; i-- > 0; value >>>= 8) {
+		    data[i] = (byte) value;
+		}
         
 		byte[] hash = hmacSha(new Base32().decode(keyTOTP.toUpperCase()), data);
 
@@ -47,6 +49,17 @@ public class TOTP {
 		int otp = binary % DIGITS_POWER[DIGITS]; 
 
 		return otp;
+	}
+	
+	public static boolean isValidToken(int code, int window) {
+		for (int i = -((window - 1) / 2); i <= window / 2; ++i) {
+			int hash = generateTOTP(getCurrentInterval() + i);
+			if (hash == code) {
+				return true;
+			}
+		}
+			
+		return false;
 	}
 	
 	private static long getCurrentInterval() {
